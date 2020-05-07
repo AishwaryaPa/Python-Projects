@@ -1,0 +1,340 @@
+# File:         proj1.py
+# Author:       Aishwarya Panchumarty
+# Date:         04/16/2016
+# Section:      09
+# E-mail:       aispan1@umbc.edu
+# Description:  This file contains code for a classic game tic-tac-toe 
+
+
+# load():    reads in tic.txt file
+# input:     opens a file and reads it
+# output:    returns the new game list to main
+
+def load():
+    file_open = open("tic.txt")
+    counter = 0
+    new_game_list = []
+    for line in file_open:
+        if counter == 0:
+            # read the player and symbol first
+            line = line.strip("\n")
+            player, symbol = line.split(",")
+            counter = counter + 1
+        else:
+            # read the board 
+            line = line.strip("\n")
+            line = list(line)
+            new_game_list.append(line)
+    file_open.close()
+    return(new_game_list, int(player), symbol)
+
+# save():   writes to a file the updated game list from main
+# input:    takes in an updated game list from main as a parameter
+# output:   writes to a file
+
+def save(board, player, symbol):
+    file_open = open("tic.txt", "w")
+    file_open.write(str(player) + "," + symbol + "\n")
+    for line in board:
+        my_string = ""
+        for character in line:
+            my_string = my_string + str(character)
+        my_string = my_string + "\n"
+        file_open.write(my_string)
+    file_open.close()
+
+# which_choice():   calls save() or load() depending on the choice of the user
+# input:            takes in the choice and the updated game list as parameter
+# output:           calls one of the functions and returns the appropriate things 
+#                   back to main
+
+def which_choice(choice, game_list, player, symbol):
+     if choice == -1:
+         print("File Saved")
+         save_game = save(game_list, player, symbol)
+     elif choice == -2:
+         print("File Loaded")
+         new_game_list = load()
+         game_list, player, symbol = new_game_list
+         return(game_list, player, symbol)
+
+# print_board():   takes in a list and prints it without quotes
+# input:           a two dimensional list from main
+# output:          prints the list
+
+def print_board(twod_list):
+    for every_list in twod_list:
+        my_string = ""
+        for character in every_list:
+            my_string = my_string + str(character)
+        print(my_string)
+
+# input_validation():  validates the input entered by user 
+# input:               takes in the data the user entered and the game board and static board
+# output:              prints the appropriate sentences depending on what the user had entered
+
+def input_validation(option, board, static_board):
+    faults = 0
+   
+    # space taken
+    for row in range(5):
+        for column in range(5):
+            if static_board[row][column] == str(option):
+                if board[row][column] == "O" or board[row][column] == "X":
+                    print("That space is taken")
+                    faults = faults + 1
+    
+    # wrong value
+    if option < -2 or option > 9 or option == 0:
+        print("Invalid value")
+        faults = faults + 1
+
+    # return
+    if faults > 0:
+        return(False)
+    else:
+        return(True)
+
+# check_points():  helps get_winner()to check the points it sends in as a parameter
+# input():         takes in a new board, symbol, row index points and column index points to check
+# output():        sends in boolean value in the return statement 
+
+def check_points(new_board, row_list, column_list, symbol):
+    counter = 0
+    for position in range(len(row_list)):
+        if new_board[row_list[position]][column_list[position]] == symbol:
+            counter = counter + 1
+
+    # two points have to be valid for someone to win. get winner() will 
+    # have the other point
+    if counter == 2:
+        return(True)
+    else:
+        return(False)
+
+# validate_list():   helps get_winner () to make sure the points are in the list are in range
+# input():           takes in row list and column list 
+# output():          sends back the lists that have points in within range
+
+def validate_list(row_list, column_list):
+    valid_row_list = []
+    valid_column_list = []
+    for character in range(len(row_list)):
+        if (row_list[character] >= 0 and row_list[character] <= 2) and (column_list[character] >= 0 and column_list[character] <= 2):
+            valid_row_list.append(row_list[character])
+            valid_column_list.append(column_list[character])
+
+    return(valid_row_list, valid_column_list)
+
+# get_winner():    helps main() determine the winner
+# input():         takes in the updated game board from main()
+# output():        sends back up a symbol if someone won. Sends back true if it is a tie. Sends back false if there has been no winner yet. 
+ 
+def get_winner(board):
+    # create a proper list containing only symbols and digits
+    new_board = [[0,1,2],[0,1,2],[0,1,2]]
+    counter = 0
+    for row in range(0,5,2):
+        for column in range(0,5,2):
+            new_board_rows = [0,0,0,1,1,1,2,2,2]
+            new_board_columns = [0,1,2,0,1,2,0,1,2]
+            new_board[new_board_rows[counter]][new_board_columns[counter]] = board[row][column]
+            counter = counter + 1
+    
+    counter = 0
+    # create valid points and check them
+    for row in range(3):
+        for column in range(3):
+            if new_board[row][column] == "X" or new_board[row][column] == "O":
+                symbol = new_board[row][column]
+
+                # same row
+                same_row_list = [row, row, row, row]
+                column_list = [column - 2, column - 1, column + 1, column + 2]
+                validation = validate_list(same_row_list, column_list)
+                same_row_list, column_list = validation
+                check = check_points(new_board, same_row_list, column_list, symbol)
+
+                if check == True:
+                    counter = counter + 1
+
+                # same column
+                row_list = [row - 2, row - 1, row + 1, row + 2]
+                same_column_list = [column, column, column, column]
+                validation = validate_list(row_list, same_column_list)
+                row_list, same_column_list = validation
+                check = check_points(new_board, row_list, same_column_list, symbol)
+
+                if check == True:
+                    counter = counter + 1
+
+                # diagonal
+                d_row_list = [row - 2, row - 1, row + 1, row + 2]
+                d_column_list = [column - 2, column - 1, column + 1, column + 2]
+                validation = validate_list(d_row_list, d_column_list)
+                d_row_list, d_column_list = validation
+                check = check_points(new_board, d_row_list, d_column_list, symbol)
+
+                if check == True:
+                    counter = counter + 1
+
+                # diogonal 2
+                d_row_list2 = [row + 2, row + 1, row - 1, row - 2]
+                d_column_list2 = [column - 2, column - 1, column + 1, column + 2]
+                validation = validate_list(d_row_list2, d_column_list2)
+                d_row_list2, d_column_list2 = validation
+                check = check_points(new_board, d_row_list2, d_column_list2, symbol)
+
+                if check == True:
+                    counter = counter + 1
+
+
+    if counter == 3:
+        return(symbol)
+    else:
+        counter  = 0
+        for row in range(3):
+            for column in range(3):
+                if new_board[row][column] != "X" and new_board[row][column] != "O":
+                    counter  = counter + 1
+        if counter == 0:
+            return(True)
+        else:
+            return(False)
+
+# random():    random will determine  which player will start and which symbol to start out with
+# input():     imports a library called random 
+# output():    sends back the player and symbol
+
+def random():
+    import random
+    player = random.randint(1,2)
+    symbol = random.randint(1,2)
+    if symbol == 1:
+        symbol = "X"
+    elif symbol == 2:
+        symbol = "O"
+    return(player, symbol)
+
+def main()
+    # Intro
+    print("Welcome to Tic-Tac-Toe")
+    print("This is for two players")
+    player, symbol = random()
+    print("Player", player, "will go first and will play with the", symbol)
+
+    
+    # board
+    static_game_list = [["1", "|", "2", "|", "3"], ["-","-","-","-","-"], ["4", "|","5","|", "6"], ["-","-","-","-","-"], ["7", "|", "8", "|","9"]] 
+    game_list = [["1", "|", "2", "|", "3"], ["-","-","-","-","-"], ["4", "|","5","|", "6"], ["-","-","-","-","-"], ["7", "|", "8", "|","9"]]
+    board = print_board(game_list)
+    print("")
+    
+    # Input 
+    STOP = 0
+    while STOP == 0:
+        if STOP == 0:
+            counter = 0
+         # Input and Input Validation
+            print("")
+            print("Player", player, "what is your choice?")
+            choice = int(input("(1-9) or -1 to save or -2 to load: "))
+            if choice == -1:
+                which_choice(choice, game_list, player, symbol)
+                game_again = input("Play again? :")
+                game_again = game_again.lower()
+                counter = 1
+                
+            elif choice == -2:
+                while choice == -2:
+                    if choice == -2:
+                        option2 = which_choice(choice, game_list, player, symbol)
+                        game_list, player, symbol = option2
+                        print_board(game_list)
+                        print("Player", player, "what is your choice?")
+                        choice = int(input("(1-9) or -1 to save or -2 to load: "))
+                        if choice == -1:
+                             which_choice(choice, game_list, player, symbol)
+                             game_again = input("Play again? :")
+                             game_again = game_again.lower()
+                             counter = 1
+                
+            valid = input_validation(choice, game_list, static_game_list)
+            while valid == False:
+                if valid == False:
+                    choice = int(input("(1-9) or -1 to save or -2 to load: "))
+                    if choice == -1:
+                        which_choice(choice, game_list, player, symbol)
+                        valid = True
+                        game_again = input("Play again? :")
+                        game_again = game_again.lower()
+                        counter = 1
+                  
+                    elif choice == -2:
+                      while choice == -2:
+                          if choice == -2:
+                              option2 = which_choice(choice, game_list, player, symbol)
+                              game_list, player, symbol = option2
+                              print_board(game_list)
+                              print("Plyer", player, "what is your choice?")
+                              choice = int(input("(1-9) or -1 to save or -2 to load: "))
+                              if choice == -1:
+                                  which_choice(choice, game_list, player, symbol)
+                                  valid = True
+                                  game_again = input("Play again? :")
+                                  game_again = game_again.lower()
+                                  counter = 1
+                
+                    else:
+                        valid = input_validation(choice, game_list, static_game_list)
+                
+
+         # Update the list
+            if valid == True:
+                for row in range(5):
+                    for column in range(5):
+                        if game_list[row][column] == str(choice):
+                            game_list[row][column] = symbol
+        
+        # print board
+            board = print_board(game_list)
+
+
+        # Keep track of who won
+            winner = get_winner(game_list)
+
+            if winner == "X" or winner == "O":
+                print("Player",player, "is the winner")
+                game_again = input("Play again? :")
+                game_again = game_again.lower()
+                counter = 1
+
+            elif winner == True:
+                print("It is a tie")
+                game_again = input("Play again? :")
+                game_again = game_again.lower()
+                counter  = 1
+
+        # Switch to the other player
+            if player == 2:
+                player =  1
+            elif player == 1:
+                player = 2
+
+        # Switch symbol
+            if symbol == "O":
+                symbol = "X"
+            elif symbol == "X":
+                symbol = "O"         
+                
+        # Prompt user again
+            if counter == 1:
+                if game_again == "y" or game_again == "yes":
+                    game_list = [["1", "|", "2", "|", "3"], ["-","-","-","-","-"], ["4", "|","5","|", "6"], ["-","-","-","-","-"], ["7", "|", "8", "|","9"]]
+                    player, symbol = random()
+                    print("Player", player, "will go first and will play with the", symbol)
+                    board = print_board(game_list)
+                else:
+                    STOP = 1
+
+main()
